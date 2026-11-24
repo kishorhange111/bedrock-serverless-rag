@@ -23,7 +23,7 @@ data "aws_caller_identity" "me" {}
 data "aws_partition" "p" {}
 
 locals {
-  account = data.aws_caller_identity.me.account_id
+  account         = data.aws_caller_identity.me.account_id
   embed_model_arn = "arn:${data.aws_partition.p.partition}:bedrock:${var.region}::foundation-model/${var.embed_model_id}"
   # Generation may go through a cross-region inference profile; both ARNs are allowed.
   gen_arns = [
@@ -484,11 +484,11 @@ resource "aws_sfn_state_machine" "reindex" {
     StartAt = "List"
     States = {
       List = {
-        Type       = "Task"
-        Resource   = "arn:${data.aws_partition.p.partition}:states:::lambda:invoke"
-        Parameters = { FunctionName = aws_lambda_function.list.arn, "Payload.$" = "$" }
+        Type           = "Task"
+        Resource       = "arn:${data.aws_partition.p.partition}:states:::lambda:invoke"
+        Parameters     = { FunctionName = aws_lambda_function.list.arn, "Payload.$" = "$" }
         ResultSelector = { "batches.$" = "$.Payload.batches", "count.$" = "$.Payload.count" }
-        Next = "Ingest"
+        Next           = "Ingest"
       }
       Ingest = {
         Type           = "Map"
