@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bedrock-serverless-rag"
+version = "0.1.0"
+description = "Multi-tenant serverless RAG on AWS: S3 -> SQS -> Lambda ingestion with idempotent re-indexing, OpenSearch Serverless vectors, Claude on Bedrock, Cognito-JWT tenant isolation, Step Functions backfill, Terraform, and an offline eval harness."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Kishor Hange" }]
+dependencies = ["boto3>=1.40", "numpy>=1.26"]
+
+[project.optional-dependencies]
+aws = ["anthropic>=0.40", "opensearch-py>=2.6", "requests>=2.31"]
+dev = ["pytest>=8", "ruff>=0.6", "moto[dynamodb,s3]>=5.1"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".venv", "build"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

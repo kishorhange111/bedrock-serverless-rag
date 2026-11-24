@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+      - name: Offline eval (regression gate)
+        run: |
+          python -m srag.evaluate --out /tmp/eval > /dev/null
+          python - <<'PY'
+          import json
+          r = json.load(open("/tmp/eval/eval.json"))["0.2"]
+          acc = r["correct"] / r["answerable"]
+          abst = r["abstain_unanswerable"] / r["unanswerable"]
+          print(f"accuracy={acc:.3f} abstain_unanswerable={abst:.3f} cross_tenant={r['cross_tenant_cites']}")
+          assert r["cross_tenant_cites"] == 0, "cross-tenant citation"
+          assert acc >= 0.95 and abst >= 0.95, "eval regression"
+          PY
+
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false
+      - run: terraform validate
